@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.eDocument.mapper.EDocumentMapper">
+   <resultMap type="hashMap" id="APRV_map">
+      <result column="APRV_CONT" property="APRV_CONT" jdbcType="CLOB" javaType="java.lang.String" /> 
+      <result column="APRV_CMPN" property="APRV_CMPN" jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+   <resultMap type="hashMap" id="MEM_map">
+      <result column="MEM_PICTURE" property="MEM_PICTURE" jdbcType="CLOB" javaType="java.lang.String" /> 
+      <result column="MEM_SIGN" property="MEM_SIGN" jdbcType="CLOB" javaType="java.lang.String" /> 
+      <result column="MEM_DNREASON" property="MEM_DNREASON" jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+
+<!-- Querry작성할곳 -->
+
+<select id="getDeptList" resultType="hashmap">
+	SELECT * FROM DEPT ORDER BY DEPT_IDX ASC
+</select>
+
+<select id="getDeptMemberList" parameterType="integer" resultMap="MEM_map">
+	SELECT A.*, B.POSITION_NM 
+	FROM MEM A, POSITION B 
+	WHERE A.DEPT_IDX=#{DEPT_IDX} 
+		AND NOT A.MEM_NM IS NULL 
+		AND A.POSITION_IDX=B.POSITION_IDX
+</select>
+
+<insert id="insertDocument" parameterType="hashmap">
+	<selectKey keyProperty="APRV_IDX" resultType="integer" order="BEFORE">
+		SELECT SEQ_APRV.NEXTVAL FROM DUAL
+	</selectKey>
+	INSERT INTO APRV (
+		APRV_IDX,APRV_NM,APRV_WRDATE,
+		APRV_STAT, APRV_TITLE, APRV_CONT,
+		APRV_WR, MEM_IDX
+	) VALUES (
+		#{APRV_IDX}, 'Y', SYSDATE,
+		'W', #{APRV_TITLE}, #{APRV_CONT},
+		#{APRV_WR}, #{MEM_IDX}
+	)
+</insert>
+
+<insert id="insertLine" parameterType="hashmap">
+	INSERT INTO APRV_LINE (
+		AL_IDX, AL_MEM_NM, AL_MEM_POSITION,
+		AL_ORDER, APRV_IDX, MEM_IDX
+	) VALUES (
+		SEQ_AL.NEXTVAL, #{AL_MEM_NM}, #{AL_MEM_POSITION},
+		#{AL_ORDER}, #{APRV_IDX}, #{MEM_IDX}
+	)
+</insert>
+
+<select id="ajaxGetCount" parameterType="integer" resultType="hashmap">
+	SELECT 
+		(SELECT COUNT(*) FROM APRV_LINE WHERE MEM_IDX=#{MEM_IDX} AND AL_STAT='W') AS CNT_WAIT
+		,(SELECT COUNT(*) FROM APRV_LINE WHERE MEM_IDX=#{MEM_IDX} AND AL_STAT='C') AS CNT_COMP
+		,(SELECT COUNT(*) FROM APRV WHERE MEM_IDX=#{MEM_IDX} AND APRV_STAT='W') AS CNT_START
+		,(SELECT COUNT(*) FROM APRV WHERE MEM_IDX=#{MEM_IDX} AND APRV_STAT='C') AS CNT_END
+	FROM DUAL
+</select>
+
+<select id="ajaxGetDocumentList" parameterType="hashmap" resultMap="APRV_map">
+	SELECT 
+		A.APRV_IDX, A.APRV_NM, TO_CHAR(A.APRV_WRDATE,'YY-MM-DD HH24:MI:SS') AS APRV_WRDATE,
+		A.APRV_STAT, A.APRV_TITLE, A.APRV_CONT,
+		A.FAPRV_IDX, A.APRV_WR
+	<if test='type.equals("start") or type.equals("end")'>
+	FROM APRV A
+	WHERE A.APRV_STAT=#{stat} AND A.MEM_IDX=#{MEM_IDX}
+	</if>
+	<if test='type.equals("wait") or type.equals("comp")'>
+	FROM APRV A, APRV_LINE B
+	WHERE B.AL_STAT=#{stat} AND B.MEM_IDX=#{MEM_IDX} AND A.APRV_IDX=B.APRV_IDX
+	</if>
+</select>
+
+<select id="ajaxGetDocumentInfo" parameterType="hashmap" resultMap="APRV_map">
+	SELECT 
+		A.APRV_IDX, A.APRV_NM, TO_CHAR(A.APRV_WRDATE,'YY-MM-DD HH24:MI:SS') AS APRV_WRDATE,
+		A.APRV_STAT, A.APRV_TITLE, A.APRV_CONT,
+		A.FAPRV_IDX, A.APRV_WR
+	FROM APRV A
+	WHERE A.APRV_IDX=#{APRV_IDX}
+</select>
+
+<select id="ajaxGetLine" parameterType="hashmap" resultType="hashmap">
+	SELECT *
+	FROM APRV_LINE
+	WHERE APRV_IDX=#{APRV_IDX}
+	ORDER BY AL_ORDER ASC
+</select>
+
+<update id="ajaxLineConfirm" parameterType="hashmap">
+	UPDATE APRV_LINE
+	SET AL_STAT='C'
+	WHERE AL_IDX=#{AL_IDX}
+</update>
+
+<update id="ajaxDocumentConfirm" parameterType="hashmap">
+	UPDATE APRV
+	SET APRV_STAT=(
+	    CASE WHEN 
+	    (SELECT COUNT(*) 
+	    FROM APRV_LINE 
+	    WHERE APRV_IDX=#{APRV_IDX})
+	        = 
+	    (SELECT COUNT(*) 
+	    FROM APRV_LINE 
+	    WHERE APRV_IDX=#{APRV_IDX} AND AL_STAT='C')
+	    THEN 'C' ELSE 'W' END
+	    )
+	WHERE APRV_IDX=#{APRV_IDX}
+</update>
+
+<!-- Querry작성할곳 -->
+
+
+
+</mapper>

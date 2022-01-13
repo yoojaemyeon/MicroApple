@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.webDisk.mapper.WebDiskMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+<!-- Query작성할곳 -->
+
+	<!-- 폴더 생성 -->
+	<insert id="insertFolder" parameterType="hashMap">
+		INSERT INTO WEBDISK(
+			WEB_IDX
+			,WEB_UPTO_IDX
+			,WEB_NM
+			,WEB_EXPL
+			,WEB_READ
+			,WEB_WRITE
+			,MEM_IDX
+			,WEB_ISFILE)
+		VALUES(
+		(SELECT NVL(MAX(WEB_IDX),0)+1 FROM WEBDISK),
+			#{webIdx}
+			,#{webNm}
+			,#{webExpl}
+			,#{webRead}
+			,#{webWrite}
+			,#{memIdx}
+			,#{webIsfile})
+	</insert>
+
+	<!-- 폴더 수정 -->
+	<update id="updateFolder" parameterType="hashMap">
+		UPDATE WEBDISK
+		SET WEB_NM=#{webNm2},WEB_EXPL=#{webExpl2},WEB_READ=#{webRead}
+		<if test="!webWrite.equals('') or webWrite!=''">
+		,WEB_WRITE=#{webWrite}
+		</if>
+		WHERE WEB_IDX=#{webIdx2}
+	</update>
+
+	<!-- 폴더 삭제 -->	
+	<delete id="deleteFolder" parameterType="webDiskVO">
+		DELETE FROM WEBDISK
+		WHERE WEB_IDX = #{webIdx}
+	</delete>
+	
+	<select id="getFolderList" parameterType="hashmap" resultType="hashmap">
+		SELECT	B.*
+			,(SELECT COUNT(*) FROM WEBDISK A WHERE A.WEB_UPTO_IDX = B.WEB_IDX) AS CNT
+		FROM WEBDISK B
+		WHERE (B.MEM_IDX=#{memIdx} OR B.MEM_IDX=0) AND B.WEB_UPTO_IDX=#{webUptoIdx} AND B.WEB_ISFILE='N'
+	</select>
+	
+	<select id="getFileList" parameterType="hashmap" resultType="hashmap">
+		SELECT	ROWNUM, B.*
+			,(SELECT COUNT(*) FROM WEBDISK A WHERE A.WEB_UPTO_IDX = B.WEB_IDX) AS CNT
+		FROM WEBDISK B
+		WHERE (B.MEM_IDX=#{memIdx} OR B.MEM_IDX=0) AND B.WEB_UPTO_IDX=#{webUptoIdx} AND B.WEB_ISFILE='Y'
+	</select>
+
+	<!-- 폴더 불러오기 -->
+	<select id="selectFolder" parameterType="hashMap" resultType="hashMap">
+		SELECT *
+		FROM   WEBDISK
+		WHERE  WEB_UPTO_IDX = #{webUptoIdx} AND MEM_IDX = #{memIdx}
+	</select>
+	
+	<!-- 해당c폴더의 idx로 파일 가져옴 -->
+	<select id="seletFiles" parameterType="Integer" resultType="hashMap">
+		SELECT *
+		FROM   WEBDISK
+		WHERE WEB_IDX = #{webIdx} AND WEB_UPTO_IDX = #{webUptoIdx}
+	</select>
+	
+	<!-- 파일  정보 불러오기  ////////////////////////// -->
+	<select id="getFileInfo" parameterType="String" resultType="hashMap">
+		 SELECT *
+		 FROM WEBDISK
+		 WHERE WEB_IDX = #{webIdx7}
+	</select>
+
+	<!-- 파일업로드 -->
+	<insert id="uploadFile" parameterType="webDiskVO">
+<!-- 		<selectKey keyProperty="web_idx" order="BEFORE" resultType="int"> -->
+<!--          	SELECT NVL(MAX(WEB_IDX),0)+1 FROM F_WEB -->
+<!--      	</selectKey> -->
+		INSERT INTO WEBDISK(
+			WEB_IDX
+			,WEB_NM
+			,WEB_ORIGIN_NM
+			,WEB_SAVENM
+			,WEB_EXTN
+			,WEB_EXPL
+			,WEB_WRDATE
+			,WEB_UPTO_IDX
+			,WEB_PATH
+			,WEB_READ
+			,WEB_WRITE
+			,MEM_IDX
+			,WEB_ISFILE
+			,WEB_SIZE)
+		VALUES(
+			SEQ_WEBFILE.NEXTVAL
+			,#{webNm}
+			,#{webOriginNm}
+			,#{webSaveNm}
+			,#{webExtn}
+			,#{webExpl}
+			,SYSDATE
+			,#{webUptoIdx}
+			,#{webPath}
+			,#{webRead}
+			,#{webWrite}
+			,#{memIdx}
+			,#{webIsfile}
+			,#{webSize}
+		)
+	</insert>
+	
+	<!-- 파일 수정 -->
+	<update id="updateFile" parameterType="webDiskVO">
+<!-- 		INSERT WEB_IDX,WEB_SAVENM,WEB_ORIGIN_NM,WEB_EXPL,WEB_NM -->
+<!-- 		VALUES(SEQ_WEBFILE.NEXTVAL,#{webSaveNm},#{webOriginNm},#{webExpl},#{webNm}) -->
+		
+		UPDATE WEBDISK
+		SET WEB_SAVENM=#{webSaveNm} , WEB_ORIGIN_NM=#{webOriginNm}
+ 			, WEB_EXPL=#{webExpl} , WEB_NM=#{webNm}
+		WHERE WEB_IDX=#{webIdx}
+<!-- 		MERGE INTO MEM A -->
+<!-- 		USING DUAL -->
+<!-- 		ON(A.WED_IDX = #{webIdx})  -->
+<!--         WHEN MATCHED THEN -->
+<!--             UPDATE SET  -->
+<!--             WEB_IDX=#{WEB_IDX} , WEB_SAVENM=#{webSavenm} , WEB_ORIGIN_NM=#{webOriginNm} -->
+<!-- 			, WEB_EXPL=#{webExpl} , WEB_NM=#{webNm} , WEB_PATH=#{webPath} -->
+
+<!--         WHEN NOT MATCHED THEN  -->
+<!--             INSERT WEB_IDX , WEB_NM , WEB_ORIGIN_NM	, WEB_SAVENM -->
+<!-- 			, WEB_EXTN	, WEB_EXPL	, WEB_WRDATE , WEB_UPTO_IDX -->
+<!-- 			, WEB_PATH	, WEB_READ	, WEB_WRITE	, MEM_IDX -->
+<!-- 			, WEB_ISFILE , WEB_SIZE) -->
+<!-- 		VALUES( -->
+<!-- 			SEQ_WEBFILE.NEXTVAL	, #{webNm}	, #{webOriginNm} -->
+<!-- 			, #{webSaveNm}	, #{webExtn}	, #{webExpl} -->
+<!-- 			, SYSDATE	, #{webUptoIdx}		, #{webPath} -->
+<!-- 			, #{webRead}	, #{webWrite}	, #{memIdx} -->
+<!-- 			, #{webIsfile}	, #{webSize} ) -->
+<!-- 			,WEB_READ=#{webRead} -->
+<!-- 		<if test="!webWrite.equals('') or webWrite!=''"> -->
+<!-- 			,WEB_WRITE=#{webWrite} -->
+<!-- 		</if> -->
+<!-- 		WHERE WEB_IDX=#{webIdx} -->
+	</update>
+	
+	<!-- 파일 삭제하기 -->
+	<delete id="deleteFile" parameterType="webDiskVO">
+		DELETE FROM WEBDISK
+		WHERE WEB_IDX = #{webIdx}
+	</delete>
+
+	<!-- 파일 상세보기-미완성 -->
+	<select id="selectFileDetail" parameterType="webDiskVO" resultType="hashMap">
+		SELECT WEB_IDX, WEB_NM, WEB_EXPL
+		FROM WEBDISK
+		WHERE WEB_IDX = #{webIdx}
+	</select>
+
+<!-- Querry작성할곳 -->
+</mapper>

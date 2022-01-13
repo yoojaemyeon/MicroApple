@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.conference.mapper.ConferenceMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+
+<!-- Querry작성할곳 -->
+	<select id="list" parameterType="hashMap" resultType="hashMap">
+		<![CDATA[
+		SELECT T.rnum, T.mtng_idx, T.MTNG_DATE, T.mtng_title, T.mtng_cont, T.mtng_results, T.mtng_file, T.mem_idx, T.MEM_NM
+		FROM
+		(
+		    SELECT row_number() over(order by a.MTNG_IDX desc) rnum,
+		            a.mtng_idx,
+		            TO_CHAR(MTNG_DATE , 'YYYY-MM-DD') AS MTNG_DATE,
+		            a.mtng_title,
+		            a.mtng_cont,
+		            a.mtng_results,
+		            a.mtng_file,
+		            a.mem_idx,
+		            (SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) AS MEM_NM
+		    FROM
+		      MTNG A, MEM B
+		    WHERE
+		    a.mem_idx = b.mem_idx
+		) T
+		WHERE T.RNUM BETWEEN #{currentPage}*10-9 AND #{currentPage}*10
+		
+		]]>
+	</select>
+
+
+	<!-- 게시물 상세조회 -->
+	<resultMap type="hashMap" id="detailGOGO">
+		<result property="mtng_results" column="a.mtng_results" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	<select id="conferenceDetail" parameterType="hashMap" resultType="hashMap"  resultMap="detailGOGO">
+		SELECT
+		    a.mtng_idx,
+		    TO_CHAR(mtng_date,'YYYY-MM-DD') AS mtng_date,
+		    a.mtng_title,
+		    a.mtng_cont,
+		    a.mtng_results,
+		    a.mtng_file,
+		    a.mem_idx,
+		    a.mtng_results,
+		   (SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) AS MEM_NM
+		FROM
+		     MTNG A, MEM B
+		WHERE 
+		    a.mem_idx = b.mem_idx
+		    and
+		    MTNG_IDX = #{mtngIdx}
+	</select>
+	
+	
+	<resultMap id="conferenceVO" type="conferenceVO" >
+		<result property="mtngCont" column="MTNG_CONT" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	
+	<select id="information" parameterType="string" resultType="conferenceVO">
+		SELECT
+		    *
+		FROM
+   			 MTNG
+		WHERE 
+			MTNG_IDX = #{mtngIdx}
+	</select>	
+	
+	<!-- 게시물 상세조회 끝 -->
+
+
+
+	<!-- 회의록 작성 -->
+	<insert id="insert" parameterType="conferenceVO">
+		INSERT INTO MTNG 
+		( 
+			MTNG_IDX,
+			MTNG_DATE,
+			MTNG_TITLE,
+			MTNG_CONT,
+			MTNG_RESULTS,
+			MTNG_FILE,
+			MEM_IDX
+			)
+	    VALUES
+	    (
+            SEQ_MTNG.nextval,
+            SYSDATE,
+            #{mtngTitle},
+            #{mtngCont},
+            #{mtngResults},
+            #{mtngFile},
+            #{memIdx}
+	    )
+	</insert>
+
+
+	<!-- 게시글 수정전 조회 -->
+	<select id="updateConference" parameterType="hashMap" resultType="conferenceVO">
+		SELECT
+			MTNG_IDX,
+		    MTNG_TITLE,
+		    MTNG_CONT,
+		    MTNG_RESULTS
+		FROM
+			MTNG
+		WHERE 
+			MTNG_IDX = #{mtngIdx}		
+	</select>
+	
+	<!-- 게시글 수정 ㄱㄱ -->
+	<update id="updateConferencePost" parameterType="conferenceVO">
+		
+		UPDATE  
+			MTNG
+		SET
+			MTNG_TITLE = #{mtngTitle},
+		    MTNG_CONT = #{mtngCont},
+		    MTNG_FILE = #{mtngFile},
+		    MTNG_RESULTS = #{mtngResults}
+		WHERE
+			MTNG_IDX = #{mtngIdx}
+	
+	</update>
+	
+	<!-- 회의록 삭제 -->
+	<delete id="deleteConference" parameterType="string">
+		DELETE 
+		FROM MTNG
+		WHERE
+		MTNG_IDX = #{mtngIdx}
+	</delete>
+	
+	
+	<!-- 회의록 검색  -->
+	<select id="searchConference" parameterType="hashMap" resultType="hashMap">
+		<![CDATA[
+		 SELECT
+            A.MTNG_TITLE,
+            A.MTNG_IDX,
+            TO_CHAR(mtng_date,'YYYY-MM-DD') AS mtng_date,
+            (SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) AS MEM_NM
+		FROM
+			MTNG A, MEM B
+		WHERE 
+            A.MEM_IDX = B.MEM_IDX
+			AND
+			(A.MTNG_TITLE LIKE '%'||#{memNm}||'%'
+			OR
+			MEM_NM LIKE '%'||#{memNm}||'%')
+		]]>
+	</select>
+	
+	<!-- 전체 게시글 행의수(total) -->
+	<select id="totalConference" resultType="int">
+		SELECT COUNT(*) CNT FROM MTNG
+	</select>
+
+
+<!--////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+	<!-- 출근 체크 -->
+	<update id="hiCheck" parameterType="hashMap">
+		UPDATE 
+			ATND_MNGM
+        SET
+           ATMN_START = SUBSTR(TO_CHAR(SYSDATE, 'YYYYMMDDHH24:MI:SS'),9)
+        WHERE
+           ATMN_DATE = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+           AND
+           MEM_IDX = #{memIdx}
+	</update>
+	
+	
+	<!-- 퇴근전 idx조회 -->
+	<select id="LoginMem" parameterType="hashMap" resultType="hashMap">
+		SELECT * FROM 
+			ATND_MNGM
+		WHERE
+			MEM_IDX = #{memIdx}
+			AND 
+			ATMN_DATE = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+	</select>
+
+	
+	<!-- 출근 조회 -->
+	<!-- 2021-12-23 = TO_CHAR(오늘연일시분초,'YYYY-MM-DD') -->
+	<select id="workCheck" parameterType="hashMap" resultType="AttendVO">
+		SELECT 
+			A.ATMN_IDX,
+			A.APRV_IDX,
+			A.ATMN_START,
+			A.ATMN_END,
+			A.ATMN_DVSN,
+			A.ATMN_CONT,
+			A.ATMN_DATE,
+			A.MEM_IDX,
+			(SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) AS MEM_NM 
+		FROM 
+		    ATND_MNGM A, MEM B
+		WHERE
+			A.MEM_IDX = #{memIdx}
+			AND
+			A.MEM_IDX = B.MEM_IDX
+			ORDER BY A.ATMN_DATE DESC
+			
+	</select>
+
+	<!-- 퇴근 체크 -->
+	<update id="ByeCheck" parameterType="hashMap">
+		UPDATE 
+			ATND_MNGM
+        SET
+           ATMN_END = SUBSTR(TO_CHAR(SYSDATE, 'YYYYMMDDHH24:MI:SS'),9),
+           ATMN_DVSN = #{atmnDvsn}	
+        WHERE
+           MEM_IDX = #{memIdx}
+			AND
+			ATMN_DATE = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+	</update>
+
+	<!-- 전 사원 출석 조회 -->
+	<select id="AllworkCheck" resultType="AttendVO">
+		SELECT 
+			A.ATMN_IDX,
+			A.APRV_IDX,
+			A.ATMN_START,
+			A.ATMN_END,
+			A.ATMN_DVSN,
+			A.ATMN_CONT,
+			A.ATMN_DATE,
+			A.MEM_IDX,
+			(SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) AS MEM_NM 
+		FROM 
+		    ATND_MNGM A, MEM B
+		WHERE
+			A.MEM_IDX = B.MEM_IDX
+			AND
+			A.ATMN_DATE = TO_CHAR(SYSDATE,'YYYY-MM-DD')
+			ORDER BY A.MEM_IDX
+	</select>
+	
+	
+	<!-- 사원 출석부에서 검색 -->
+	<select id="MemSearchGo" parameterType="hashMap" resultType="AttendVO">
+		SELECT 
+			A.ATMN_IDX,
+			A.APRV_IDX,
+			A.ATMN_START,
+			A.ATMN_END,
+			A.ATMN_DVSN,
+			A.ATMN_CONT,
+			A.ATMN_DATE,
+			A.MEM_IDX,
+			(SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) AS MEM_NM 
+		FROM 
+		    ATND_MNGM A, MEM B
+		WHERE
+			A.MEM_IDX = B.MEM_IDX
+			AND
+			(MEM_NM LIKE '%'||#{memNm}||'%' 
+			 OR
+			 A.ATMN_DATE LIKE '%'||#{memNm}||'%')
+			 ORDER BY A.ATMN_DATE DESC
+	</select>
+
+
+	<!-- 출근 내용 작성 -->
+	<update id="saveAtmnCont" parameterType="hashMap" >
+		UPDATE ATND_MNGM
+		SET
+		ATMN_CONT = #{atmnCont}
+		WHERE
+		ATMN_IDX = #{atmnIdx}
+	</update>
+
+
+	<!-- 출근 일수 -->
+	<select id="attend" parameterType="hashMap" resultType="hashMap">
+		<![CDATA[
+		SELECT 
+			(SELECT COUNT(*)
+			FROM 
+				ATND_MNGM
+			WHERE 
+				MEM_IDX = #{memIdx}
+			) AS TOTAL,
+			(SELECT COUNT(*)
+			FROM 
+				ATND_MNGM
+			WHERE 
+				MEM_IDX = #{memIdx}
+				AND 
+				ATMN_DVSN = '출근') AS REALATTEND ,
+			(SELECT COUNT(*)
+			FROM 
+				ATND_MNGM
+			WHERE 
+				MEM_IDX = #{memIdx}
+				AND 
+				ATMN_DVSN = '미출근') AS NOTATTEND
+		FROM DUAL
+		]]>
+	</select>
+
+
+<!-- Querry작성할곳 -->
+
+
+
+</mapper>

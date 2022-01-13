@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.main.mapper.MainMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+
+<!-- Querry작성할곳 -->
+
+
+
+<!-- Querry작성할곳 -->
+
+
+
+</mapper>

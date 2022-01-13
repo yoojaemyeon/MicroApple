@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.board.mapper.BoardMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+<!-- alias는 boardVO -->
+	
+	<!-- 공지 알림 등록 -->
+	<insert id="announceNotify" parameterType="hashMap">	
+		INSERT INTO NOTICE (
+		    NOTICE_IDX,
+		    MEM_IDX,
+		    NOTICE_CONT,
+		    NOTICE_URL,
+		    NOTICE_WRDATE,
+		    NOTICE_ADDR
+		) VALUES (
+		    SEQ_NOTICE.NEXTVAL,
+		    #{memIdx},
+		    #{noticeCont},
+		    #{noticeUrl},
+		    SYSDATE,
+		    #{noticeAddr}
+		)
+	</insert>
+
+	
+<!-- 자유게시판 -->
+
+	<!-- 자유게시판 전체 조회 -->
+	<select id="freeList" resultType="boardVO" parameterType="hashMap">
+		<![CDATA[
+			SELECT 
+				B.BOARD_IDX,
+				(SELECT A.MEM_NM FROM MEM A WHERE A.MEM_IDX = B.MEM_IDX) MEM_NM, 
+				(SELECT A.MEM_PICTURE FROM MEM A WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE, 
+				B.BOARD_TITLE, 
+				B.MEM_IDX,
+				B.BOARD_CONT, 
+				TO_CHAR(BOARD_WRDATE,'YY-MM-DD') AS BOARD_WRDATE
+			FROM BOARD B, MEM A
+			WHERE B.BOARD_DVSN=#{boardDvsn}
+			AND
+			A.MEM_IDX = B.MEM_IDX
+			ORDER BY B.BOARD_WRDATE DESC
+		]]>
+	</select>
+	
+	<!-- 자유게시판 댓글 전체 조회 -->
+	<select id="freeCommList" resultType="commVO" parameterType="int">
+		<![CDATA[
+			SELECT 
+				A.COMM_IDX,
+				TO_CHAR(COMM_DATE,'YY-MM-DD hh:mm:ss') AS COMM_DATE,
+				A.COMM_CONT,
+				A.BOARD_IDX,
+				A.MEM_IDX,
+			    (SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX=B.MEM_IDX) AS MEM_NM,
+			    (SELECT B.MEM_PICTURE FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE
+			FROM COMM A, MEM B
+			WHERE A.MEM_IDX=B.MEM_IDX
+			ORDER BY COMM_DATE DESC
+		]]>
+	</select>
+		
+	<!-- 게시판 사원 사진 -->
+	<select id="memList" resultType="memberVO" parameterType="hashMap">
+		<![CDATA[
+			SELECT 
+				A.MEM_PICTURE 
+			FROM MEM A, BOARD B
+			WHERE
+			B.BOARD_IDX=#{boardIdx}
+			AND 
+			A.MEM_IDX=B.MEM_IDX
+		]]>
+	</select>
+	
+	<!-- 자유게시판 게시글 작성 -->
+	<insert id="freeInsert" parameterType="boardVO">
+		INSERT INTO BOARD (
+		    BOARD_IDX,
+		    BOARD_DVSN,
+		    BOARD_TITLE,
+		    BOARD_CONT,
+		    BOARD_WRDATE,
+		    MEM_IDX
+		) VALUES (
+		    SEQ_BOARD.nextval
+		   ,#{boardDvsn}
+		   ,#{boardTitle}
+		   ,#{boardCont}
+		   ,SYSDATE
+		   ,#{memIdx}
+		)	
+	</insert>
+	
+	<!-- 자유게시글 수정 전 상세조회 -->
+	<select id="freeUpdateDetail" resultType="boardVO" parameterType="string">
+		SELECT * FROM BOARD
+		WHERE 
+		BOARD_IDX = #{boardIdx}
+	</select>
+	
+	<!-- 자유게시판 수정 -->
+	<update id="freeUpdate" parameterType="hashMap">
+		UPDATE board
+		SET board_title = #{boardTitle},
+			board_cont = #{boardCont}
+		WHERE board_idx = #{boardIdx}
+	</update>
+	
+	<!-- 자유게시판 삭제 -->
+	<delete id="freeDelete" parameterType="string">
+		DELETE FROM BOARD
+		WHERE
+		board_idx = #{boardIdx}
+	</delete>
+	
+	<!-- 자유게시판 댓글 등록 -->
+	 <insert id="freeCommInsert" parameterType="hashMap">
+		INSERT INTO COMM (
+					COMM_IDX,
+					COMM_DATE,
+					COMM_CONT,
+					BOARD_IDX,
+					MEM_IDX
+		) 
+		VALUES (
+			SEQ_COMM.NEXTVAL,
+			SYSDATE,
+			#{commCont},
+			#{boardIdx},
+			#{memIdx}
+		) 
+		<selectKey resultType="integer" order="AFTER" keyProperty="commIdx">
+			select SEQ_COMM.CURRVAL FROM DUAL 
+		</selectKey>
+	
+	</insert>
+
+	<!-- 자유게시판 댓글등록 후 전체 조회 -->
+	 <select id="freeCommSelectOne" parameterType="integer" resultType="commVO">
+	 	<![CDATA[
+			SELECT 
+				A.COMM_IDX, 
+				A.COMM_DATE, 
+				A.COMM_CONT, 
+				A.BOARD_IDX, 
+				A.MEM_IDX, 
+				B.MEM_NM
+			FROM   COMM A, MEM B
+			WHERE COMM_IDX=#{commIdx} 
+			AND A.MEM_IDX=B.MEM_IDX
+		]]>
+	</select>
+	
+	<!-- 자유게시판 댓글 삭제 -->
+	<delete id="freeCommDel" parameterType="string">
+		DELETE FROM COMM
+		WHERE COMM_IDX=#{commIdx}
+	</delete>
+	
+	<!-- 자유게시판 게시글 검색 -->
+	<select id="freeSearch" resultType="boardVO" parameterType="hashMap">
+		<![CDATA[
+			SELECT 
+				A.BOARD_IDX, 
+				A.MEM_IDX, 
+				B.MEM_NM, 
+				(SELECT B.MEM_PICTURE FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE,
+				A.BOARD_DVSN, 
+				A.BOARD_TITLE, 
+				A.BOARD_CONT, 
+				TO_CHAR(BOARD_WRDATE,'YY-MM-DD') AS BOARD_WRDATE
+			FROM BOARD A, MEM B
+			WHERE A.MEM_IDX=B.MEM_IDX
+				AND A.BOARD_DVSN=1
+				AND (A.BOARD_TITLE LIKE '%' || #{boardTitle} || '%'  OR A.BOARD_CONT LIKE '%' || #{boardCont} || '%') 
+			ORDER BY BOARD_WRDATE DESC
+		]]>
+	</select>
+	<!-- 자유게시판 댓글 검색 -->
+	<select id="freeCommSearch" resultType="commVO" parameterType="hashMap">
+		<![CDATA[
+			SELECT 
+				A.COMM_IDX,
+				TO_CHAR(COMM_DATE,'YY-MM-DD hh:mm:ss') AS COMM_DATE,
+				A.COMM_CONT,
+				A.BOARD_IDX,
+				A.MEM_IDX,
+				(SELECT B.MEM_PICTURE FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE,
+			    (SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX=B.MEM_IDX) AS MEM_NM
+			FROM COMM A, MEM B
+			WHERE A.MEM_IDX=B.MEM_IDX
+			ORDER BY COMM_DATE DESC
+		]]>
+	</select>
+	
+<!-- 공지게시판 -->
+	
+	<!-- 공지게시판 전체 조회 -->
+	<select id="announceList" resultType="boardVO" parameterType="string">
+		<![CDATA[
+			SELECT 
+				B.BOARD_IDX,
+			 	(SELECT A.MEM_NM FROM MEM A WHERE A.MEM_IDX = B.MEM_IDX) MEM_NM, 
+			 	(SELECT A.MEM_PICTURE FROM MEM A WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE,
+			 	B.BOARD_TITLE, 
+			 	B.MEM_IDX,
+			 	B.BOARD_CONT, 
+			 	B.BOARD_FILE,
+			 	TO_CHAR(BOARD_WRDATE,'YY-MM-DD') AS BOARD_WRDATE
+			FROM BOARD B, MEM A
+			WHERE 
+			B.BOARD_DVSN=#{boardDvsn}
+			AND
+			A.MEM_IDX = B.MEM_IDX
+			ORDER BY B.BOARD_WRDATE DESC
+		]]>
+	</select>
+	
+	<!-- 공지게시판 게시글 검색 -->
+	<select id="announceSearch" resultType="boardVO" parameterType="hashMap">
+		<![CDATA[
+			SELECT 
+				A.BOARD_IDX, 
+				A.MEM_IDX, 
+				B.MEM_NM, 
+				(SELECT B.MEM_PICTURE FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE,
+				A.BOARD_DVSN, 
+				A.BOARD_TITLE, 
+				A.BOARD_CONT, 
+				TO_CHAR(BOARD_WRDATE,'YY-MM-DD') AS BOARD_WRDATE
+			FROM BOARD A, MEM B
+			WHERE A.MEM_IDX=B.MEM_IDX
+				AND A.BOARD_DVSN=2
+				AND (A.BOARD_TITLE LIKE '%' || #{boardTitle} || '%'  OR A.BOARD_CONT LIKE '%' || #{boardCont} || '%') 
+			ORDER BY BOARD_WRDATE DESC
+		]]>
+	</select>
+	
+	<!-- 공지게시판 게시글 작성 -->
+	<insert id="announceInsert" parameterType="boardVO">
+		INSERT INTO BOARD (
+		    BOARD_IDX,
+		    BOARD_DVSN,
+		    BOARD_TITLE,
+		    BOARD_CONT,
+		    BOARD_WRDATE,
+		    BOARD_FILE,
+		    MEM_IDX
+		) VALUES (
+		    SEQ_BOARD.nextval
+		   ,#{boardDvsn}
+		   ,#{boardTitle}
+		   ,#{boardCont}
+		   ,SYSDATE
+		   ,#{boardFile}
+		   ,#{memIdx}
+		)	
+	</insert>
+	
+	<!-- 공지게시글 수정 전 상세조회 -->
+	<select id="announceUpdateDetail" resultType="boardVO" parameterType="string">
+		SELECT * FROM BOARD
+		WHERE 
+		BOARD_IDX = #{boardIdx}
+	</select>
+	
+	<!-- 공지게시판 수정 -->
+	<update id="announceUpdate" parameterType="boardVO">
+		UPDATE board
+		SET board_title = #{boardTitle},
+			board_cont = #{boardCont}
+		WHERE board_idx = #{boardIdx}
+	</update>
+	
+	<!-- 공지게시글 삭제 -->
+	<delete id="announceDelete" parameterType="string">
+		DELETE FROM BOARD
+		WHERE
+		board_idx = #{boardIdx}
+	</delete>
+	
+	
+<!-- 복지몰 건의사항 -->
+	
+	<!-- 복지몰 건의사항 전체 조회 -->
+	<select id="mcaBoardList" resultType="boardVO" parameterType="string">
+		<![CDATA[
+			SELECT 
+				B.BOARD_IDX,
+			 	(SELECT A.MEM_NM FROM MEM A WHERE A.MEM_IDX = B.MEM_IDX) MEM_NM,
+			 	(SELECT A.MEM_PICTURE FROM MEM A WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE, 
+			 	B.BOARD_TITLE, 
+				B.MEM_IDX,
+				B.BOARD_CONT, 
+				TO_CHAR(BOARD_WRDATE,'YY-MM-DD') AS BOARD_WRDATE
+			FROM BOARD B, MEM A
+			WHERE B.BOARD_DVSN=#{boardDvsn}
+			AND
+			A.MEM_IDX = B.MEM_IDX
+			ORDER BY B.BOARD_WRDATE DESC
+		]]>
+	</select>
+	
+	<!-- 복지몰 건의사항 댓글 전체 조회 -->
+	<select id="mcaBoardCommList" resultType="commVO">
+		<![CDATA[
+			SELECT 
+				A.COMM_IDX,
+				TO_CHAR(COMM_DATE,'YY-MM-DD hh:mm:ss') AS COMM_DATE,
+				A.COMM_CONT,
+				A.BOARD_IDX,
+				A.MEM_IDX,
+			    (SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX=B.MEM_IDX) AS MEM_NM,
+			    (SELECT B.MEM_PICTURE FROM MEM B WHERE B.MEM_IDX = A.MEM_IDX) MEM_PICTURE
+			FROM COMM A, MEM B
+			WHERE A.MEM_IDX=B.MEM_IDX
+			ORDER BY COMM_DATE DESC
+		]]>
+	</select>
+	
+	<!-- 복지몰 건의사항 게시글 작성 -->
+	<insert id="mcaBoardInsert" parameterType="boardVO">
+		INSERT INTO BOARD (
+		    BOARD_IDX,
+		    BOARD_DVSN,
+		    BOARD_TITLE,
+		    BOARD_CONT,
+		    BOARD_WRDATE,
+		    MEM_IDX
+		) VALUES (
+		    SEQ_BOARD.nextval
+		   ,#{boardDvsn}
+		   ,#{boardTitle}
+		   ,#{boardCont}
+		   ,SYSDATE
+		   ,#{memIdx}
+		)	
+	</insert>
+	
+	<!-- 복지몰 건의사항 수정 전 상세조회 -->
+	<select id="mcaBoardUpdateDetail" resultType="boardVO" parameterType="string">
+		SELECT * FROM BOARD
+		WHERE 
+		BOARD_IDX = #{boardIdx}
+	</select>
+	
+	<!-- 복지몰 건의사항 수정 -->
+	<update id="mcaBoardUpdate" parameterType="hashMap">
+		UPDATE board
+		SET board_title = #{boardTitle},
+			board_cont = #{boardCont}
+		WHERE board_idx = #{boardIdx}
+	</update>
+	
+	<!-- 복지몰 건의사항 게시글 삭제 -->
+	<delete id="mcaBoardDelete" parameterType="string">
+		DELETE FROM BOARD
+		WHERE
+		board_idx = #{boardIdx}
+	</delete>
+	
+	<!-- 복지몰 건의사항 댓글 등록 -->
+	<insert id="mcaBoardComm" parameterType="hashMap">
+		INSERT INTO COMM (
+					COMM_IDX,
+					COMM_DATE,
+					COMM_CONT,
+					BOARD_IDX,
+					MEM_IDX
+		) 
+		VALUES (
+			SEQ_COMM.NEXTVAL,
+			SYSDATE,
+			#{commCont},
+			#{boardIdx},
+			#{memIdx}
+		) 
+		<selectKey resultType="integer" order="AFTER" keyProperty="commIdx">
+			select SEQ_COMM.CURRVAL FROM DUAL 
+		</selectKey>
+	</insert>
+
+	<!-- 복지몰 댓글 등록 후 전체 조회 -->
+	<select id="mcaBoardSelectOne" parameterType="integer" resultType="commVO">
+		<![CDATA[
+			SELECT A.*, B.*
+			FROM   COMM A, MEM B
+			WHERE COMM_IDX=#{commIdx} 
+			AND A.MEM_IDX=B.MEM_IDX
+		]]>
+	</select>
+	
+	<!-- 복지몰 댓글 삭제 -->
+	<delete id="mcaBoardCommDel" parameterType="string">
+		DELETE FROM COMM
+		WHERE COMM_IDX=#{commIdx}
+	</delete>
+
+	<!-- 복지몰 게시글 검색 -->
+	<select id="mcaBoardSearch" resultType="boardVO" parameterType="hashMap">
+		<![CDATA[
+			SELECT 
+				A.BOARD_IDX, 
+				A.MEM_IDX, 
+				B.MEM_NM, 
+				(SELECT B.MEM_PICTURE FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE,
+				A.BOARD_DVSN, 
+				A.BOARD_TITLE, 
+				A.BOARD_CONT, 
+				TO_CHAR(BOARD_WRDATE,'YY-MM-DD') AS BOARD_WRDATE
+			FROM BOARD A, MEM B
+			WHERE A.MEM_IDX=B.MEM_IDX
+				AND A.BOARD_DVSN=3
+				AND (A.BOARD_TITLE LIKE '%' || #{boardTitle} || '%'  OR A.BOARD_CONT LIKE '%' || #{boardCont} || '%') 
+			ORDER BY BOARD_WRDATE DESC
+		]]>
+	</select>
+	
+	<!-- 게시판 상세조회 -->
+	<select id="boardDetail" resultType="boardVO" parameterType="hashMap">
+		<![CDATA[
+			SELECT 
+			    B.BOARD_IDX,
+			    (SELECT A.MEM_NM FROM MEM A WHERE A.MEM_IDX = B.MEM_IDX) MEM_NM, 
+			    B.BOARD_TITLE, 
+			    B.MEM_IDX,
+			    B.BOARD_CONT, 
+			    TO_CHAR(BOARD_WRDATE,'YY-MM-DD') AS BOARD_WRDATE
+			FROM BOARD B, MEM A
+			WHERE BOARD_IDX=#{boardIdx}
+			AND A.MEM_IDX = B.MEM_IDX
+			ORDER BY B.BOARD_WRDATE DESC
+		]]>
+	</select>
+	
+	<!-- 게시판 상세에 대한 댓글 조회 -->
+	<select id="commList" resultType="commVO" parameterType="hashMap">
+		<![CDATA[
+			SELECT 
+			    A.COMM_IDX,
+			    TO_CHAR(COMM_DATE,'YY-MM-DD hh:mm:ss') AS COMM_DATE,
+			    A.COMM_CONT,
+			    A.BOARD_IDX,
+			    A.MEM_IDX,
+			    (SELECT B.MEM_PICTURE FROM MEM B WHERE A.MEM_IDX = B.MEM_IDX) MEM_PICTURE, 
+			    (SELECT B.MEM_NM FROM MEM B WHERE A.MEM_IDX=B.MEM_IDX) AS MEM_NM
+			FROM COMM A, MEM B
+			WHERE A.MEM_IDX=B.MEM_IDX
+			AND BOARD_IDX=#{boardIdx}
+			ORDER BY COMM_DATE DESC
+		]]>
+	</select>
+	
+</mapper>

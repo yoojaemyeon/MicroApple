@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.chatting.mapper.ChattingMapper">
+   <resultMap type="hashMap" id="resultMap1">
+   	  <result column="CHAT_IDX" property="CHAT_IDX"/>
+   	  <result column="CHAT_NM" property="CHAT_NM"/>
+   	  <result column="CHAT_CRDATE" property="CHAT_CRDATE"/>
+   </resultMap>
+
+
+<!-- Querry작성할곳 -->
+
+<!-- 채팅방 목록 -->
+<select id="getRoomList" parameterType="string" resultType="hashmap">
+		<![CDATA[
+		SELECT A.CHAT_IDX, A.MEM_IDX, B.CHAT_CRDATE, B.CHAT_NM, C.LAST_CHAT
+		FROM CHAT_MEM A, CHAT B, (
+                SELECT A.CHMSG_IDX, A.CHAT_IDX, A.CHMSG_CONT AS LAST_CHAT
+                FROM   CHAT_MSG A 
+                WHERE  A.CHMSG_IDX = (
+                    SELECT MAX(B.CHMSG_IDX)
+                    FROM   CHAT_MSG B
+                    WHERE  B.CHAT_IDX = A.CHAT_IDX
+                )
+        ) C
+		WHERE A.MEM_IDX=#{chattingVO.chatIdx} AND A.CHAT_IDX=B.CHAT_IDX AND A.CHAT_IDX = C.CHAT_IDX
+		]]>
+</select>
+<!-- 채팅방 생성 -->
+<insert id="createChattingRoom" parameterType="hashmap">
+	INSERT INTO CHAT (
+		CHAT_IDX
+		,CHAT_NM
+		,CHAT_CRDATE
+	) VALUES (
+		SEQ_CHAT.NEXTVAL
+		,#{chatNm}
+		,SYSDATE
+	)
+	<selectKey keyProperty="chatIdx" resultType="integer" order="AFTER">
+		SELECT SEQ_CHAT.CURRVAL FROM DUAL
+	</selectKey>
+</insert>
+<insert id="setChattingRoomMember" parameterType="hashmap">
+	INSERT INTO CHAT_MEM (
+		CHAT_IDX
+		,MEM_IDX
+	) VALUES (
+		#{chatIdx}
+		,#{memIdx}
+	)
+</insert>
+<!-- 
+
+채팅방 수정
+<update id="">
+
+</update>
+
+채팅방 삭제
+<delete id="">
+
+</delete>
+ -->
+ 
+ <!-- 채팅 내용 저장 -->
+<insert id="insertMessage" parameterType="hashmap">
+	INSERT INTO CHAT_MSG(
+	CHMSG_IDX,
+	CHAT_IDX,
+	MEM_IDX,
+	CHMSG_WRDATE,
+	CHMSG_CONT
+	)VALUES(
+	SEQ_CHATMSG.nextval,
+	#{chatIdx},
+	#{memIdx},
+	SYSDATE,
+	#{chmsgCont})
+</insert>
+
+<!-- 채팅내용 불러오기 -->
+<select id="getChatMsgList" parameterType="string" resultType="hashmap">
+	<![CDATA[
+	SELECT A.*, B.MEM_NM FROM CHAT_MSG A, MEM B
+	WHERE A.CHAT_IDX=#{chatIdx} AND A.MEM_IDX=B.MEM_IDX
+	ORDER BY A.CHMSG_IDX ASC
+	]]>
+</select>
+<select id="getChatMsgOne" parameterType="integer" resultType="chatMessageVO">
+	SELECT *
+	FROM  (
+			SELECT * FROM CHAT_MSG
+			WHERE CHAT_IDX=#{chatIdx}
+			ORDER BY CHMSG_IDX DESC
+		)
+	WHERE ROWNUM = 1
+</select>
+
+
+<!-- Querry작성할곳 -->
+
+
+
+</mapper>

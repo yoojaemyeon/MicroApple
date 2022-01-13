@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.notify.mapper.NotifyMapper">
+<!-- <mapper namespace="notify"> -->
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+	<!-- 알림 목록 조회 -->
+	<select id="notifyList" parameterType="memberVO" resultType="notifyVO">
+		<![CDATA[
+			SELECT
+			    NOTICE_IDX,
+			    MEM_IDX,
+			    NOTICE_CONT,
+			    NOTICE_URL,
+			    TO_CHAR(NOTICE_WRDATE,'YY-MM-DD hh:mm:ss') AS NOTICE_WRDATE,
+			    NOTICE_READ,
+			    NOTICE_ADDR,
+			    NOTICE_SENDALL
+			FROM NOTICE
+			WHERE (MEM_IDX = #{memIdx} OR NOTICE_SENDALL = 'Y') AND NOTICE_WRDATE>=#{memStart}
+			ORDER BY NOTICE_IDX DESC
+		]]>
+	</select>
+
+	<!-- 알림 목록 조회(board_idx 가져오는 버전) 
+	<select id="notifyList" parameterType="memberVO" resultType="notifyVO">
+	<![CDATA[
+			SELECT
+			    B.BOARD_IDX,
+			    A.NOTICE_IDX,
+			    A.MEM_IDX,
+			    A.NOTICE_CONT,
+			    A.NOTICE_URL,
+			    TO_CHAR(NOTICE_WRDATE,'YY-MM-DD hh:mm:ss') AS NOTICE_WRDATE,
+			    A.NOTICE_READ,
+			    A.NOTICE_ADDR,
+			    A.NOTICE_SENDALL
+			FROM NOTICE A, BOARD B
+			WHERE (A.MEM_IDX = #{memIdx} OR A.NOTICE_SENDALL = 'Y') 
+			AND A.NOTICE_WRDATE>=#{memStart}
+			AND A.MEM_IDX=B.MEM_IDX
+			ORDER BY A.NOTICE_IDX DESC
+		]]>
+	</select>
+	-->
+	
+	<!-- 알림 등록 -->
+	<insert id="insertNotify" parameterType="hashMap">	
+		INSERT INTO NOTICE (
+			NOTICE_IDX,
+			MEM_IDX,
+			NOTICE_CONT,
+			NOTICE_URL,
+			NOTICE_WRDATE,
+			NOTICE_ADDR,
+			NOTICE_SENDALL
+			) 
+		VALUES (
+			SEQ_NOTICE.NEXTVAL,
+			#{memIdx},
+			#{noticeCont},
+			#{noticeUrl},
+			SYSDATE,
+			#{noticeAddr},
+			#{noticeSendall}
+			) 
+	</insert>
+	
+	<!-- 알림 삭제 -->
+	<delete id="notifyDelete" parameterType="string">
+		DELETE FROM NOTICE
+		WHERE
+		NOTICE_IDX = #{noticeIdx}
+	</delete>
+	
+</mapper>

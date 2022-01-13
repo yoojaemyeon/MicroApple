@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.reservation.mapper.ReservationMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+
+<!-- Querry작성할곳 -->
+
+<!-- 나의 예약 목록 -->
+<select id="getMyReservationList" resultType="reservationVO" parameterType="string">
+
+	<![CDATA[
+		SELECT RSRV_IDX, ARTI_IDX, MEM_IDX, TO_CHAR(RSRV_START, 'yyyy-mm-dd HH24:MI') AS RSRV_START, TO_CHAR(RSRV_END, 'yyyy-mm-dd HH24:MI') AS RSRV_END, RSRV_CONT
+		FROM RSRV 
+		WHERE MEM_IDX = #{memIdx}
+	]]>
+</select> 
+
+<!-- 전체 물품 목록 -->
+<select id="getArticleListAll" resultType="articleVO" >
+	<![CDATA[
+	SELECT * FROM ARTI
+	ORDER BY ARTI_IDX ASC
+	]]>
+</select> 
+
+<!-- 물품별 예약 목록 -->
+<select id="getArtiRsvsList" resultType="reservationVO" parameterType="integer">
+
+	<![CDATA[
+		SELECT RSRV_IDX, ARTI_IDX, MEM_IDX, TO_CHAR(RSRV_START, 'yyyy-mm-dd HH24:MI') AS RSRV_START, TO_CHAR(RSRV_END, 'yyyy-mm-dd HH24:MI') AS RSRV_END, RSRV_CONT
+		FROM RSRV
+		WHERE ARTI_IDX = #{artiIdx}
+	]]>
+</select> 
+
+<!-- 물품 이름 -->
+<select id="getArtiInfo" resultType="articleVO" parameterType="integer">
+
+	<![CDATA[
+		SELECT ARTI_IDX, ARTI_DVSN, ARTI_NM
+		FROM ARTI
+		WHERE ARTI_IDX = #{artiIdx}
+	]]>
+</select> 
+
+<!-- 예약 등록 -->
+<insert id="insertReservation" parameterType="hashMap">
+	INSERT INTO RSRV (RSRV_IDX, ARTI_IDX, MEM_IDX, RSRV_START, RSRV_END, RSRV_CONT)
+	VALUES (SEQ_RSRV.nextval, #{artiIdx}, #{memIdx}, to_date(#{rsrvStart}, 'YYYY/MM/DD HH24:MI:SS'), to_date(#{rsrvEnd}, 'YYYY/MM/DD HH24:MI:SS'), #{rsrvCont})
+</insert>
+
+<select id="getRsrvInfo" resultType="reservationVO" parameterType="integer">
+
+	<![CDATA[
+		SELECT ARTI_IDX
+		FROM RSRV
+		WHERE ARTI_IDX = #{artiIdx}
+	]]>
+</select> 
+
+
+<!-- 물품 등록 -->
+<insert id="insertArti" parameterType="hashMap" >
+	INSERT INTO ARTI(ARTI_IDX, ARTI_DVSN, ARTI_NM)
+	VALUES(#{artiIdx}, #{artiDvsn}, #{artiNm})
+</insert>
+
+
+<!-- 물품 삭제 -->
+<delete id="deleteArti" >
+	DELETE FROM ARTI WHERE ARTI_IDX = #{artiIdx}
+</delete>
+
+
+
+
+<!-- Querry작성할곳 -->
+
+
+
+</mapper>

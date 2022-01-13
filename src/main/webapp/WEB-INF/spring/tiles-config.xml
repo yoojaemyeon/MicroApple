@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC
+"-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+"http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<!-- tiles 설정 -->
+<tiles-definitions>
+<!-- main layout -->
+	<definition name="tiles-layout" template="/WEB-INF/views/tiles/index.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/tiles/header.jsp"/>
+		<put-attribute name="aside" value="/WEB-INF/views/tiles/aside.jsp"/>
+		<put-attribute name="rightSidebar" value="/WEB-INF/views/tiles/rightSidebar.jsp"/>
+		<put-attribute name="body" value=""/>
+		<put-attribute name="footer" value="/WEB-INF/views/tiles/footer.jsp"/>
+	</definition>
+<!-- 상세내용 작성 -->	
+	<definition name="*/*" extends="tiles-layout">
+	<!-- name의 */* => body의 value {1}/{2}에 해당 
+	controller에서 return 1에 해당하는 폴더 /2에 해당하는 jsp파일의 명을 설정함-->	
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+		<put-attribute name="title" value="MicroApple" /><!-- index.jsp에 있는 <tiles:insertAttribute name="title"/> -->	
+	</definition>
+
+<!-- 	<definition name="*.tiles" extends="tiles-layout"> -->
+<!-- 		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp" /> -->
+<!-- 		<put-attribute name="title" value="tiles" /> -->
+<!-- 	</definition> -->
+	
+	<!-- tiles 적용 제외 부분 정의부 -->
+	<definition name="empty" template ="/WEB-INF/views/tiles/empty.jsp">
+		<put-attribute name="content" value =""/>
+	</definition>
+	<!-- 타일즈 제외 선언부 -->
+	<definition name="view_chat/*" extends ="empty">
+		<put-attribute name="content" value ="/WEB-INF/views/chatting/chat/{1}.jsp"></put-attribute>
+	</definition>
+
+	
+</tiles-definitions>

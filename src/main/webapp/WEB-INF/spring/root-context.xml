@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	<!-- root-context.xml : 스프링 설정 파일 view와 관련되지 않은 객체를 정의 Service(기능), DAO(Repository), 
+		DB등 비지니스 로직과 관련된 설정 -->
+	<bean id="dataSource"
+		class="org.apache.commons.dbcp2.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName"
+			value="oracle.jdbc.driver.OracleDriver"></property>
+		<property name="url"
+			value="jdbc:oracle:thin:@112.220.114.130:1521:xe"></property>
+		<property name="username" value="team4_202106F"></property>
+		<property name="password" value="java"></property>
+<!-- 		<property name="url" -->
+<!-- 			value="jdbc:oracle:thin:@localhost:1521:xe"></property> -->
+<!-- 		<property name="username" value="MicroApple"></property> -->
+<!-- 		<property name="password" value="java"></property> -->
+	</bean>
+
+	<bean id="sqlSessionFactory"
+		class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="mapperLocations"
+			value="classpath:/sqlmap/**/*_SQL.xml"></property>
+		<property name="configLocation"
+			value="/WEB-INF/mybatisAlias/mybatisAlias.xml"></property>
+	</bean>
+
+	<bean id="sqlSessionTemplate"
+		class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory"></constructor-arg>
+	</bean>
+
+
+
+
+	<!-- mapper 인터페이스 설정 개발자가 직접 DAO를 설정하지 않아도 자동으로 Mapper 인터페이스를 활용하는 객체를 생성하게 됨 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="micro.apple.groupware.*.mapper" />
+	</bean>
+	
+	
+<!-- 	구현수 -->
+<!-- 메일객체 -->
+	<bean id="mailSender"
+		class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="smtp.naver.com" /> <!-- 메일서버 호스트 -->
+		<property name="port" value="465" /> <!-- 메일서버 포트번호 -->
+		<property name="username" value="kms19609999@naver.com" /> <!-- 자신의 이메일 아이디 -->
+		<property name="password" value="didvkrjatk1!" /> <!-- 자신의 비밀번호 -->
+		<!-- 보안연결 SSL과 관련된 설정 -->
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.smtp.auth">true</prop>
+				<prop key="mail.smtp.starttls.enable">true</prop>
+				<prop key="mail.smtps.checkserveridentity">true</prop>
+				<prop key="mail.smtps.ssl.trust">*</prop>
+				<prop key="mail.debug">true</prop>
+				<prop key="mail.smtp.socketFactory.class">javax.net.ssl.SSLSocketFactory</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+<!-- 		 파일 업로드 용량 (10Mb) -->
+		<property name="maxUploadSize" value="10485760"></property>
+		<property name="defaultEncoding" value="UTF-8"></property>
+	</bean>
+	
+	
+<!-- 	파일업로드 디렉토리 설정 -->
+	<bean id="uploadPath" class="java.lang.String">
+		<constructor-arg value="C:\\eclipse-workspace\\myjava\\MicroApple\\src\\main\\webapp\\resources\\upload"></constructor-arg>
+	</bean>
+<!-- 	구현수 -->
+	
+	
+	
+	
+</beans>

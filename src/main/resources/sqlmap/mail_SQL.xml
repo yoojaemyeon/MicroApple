@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.mail.mapper.MailMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+
+<!-- Querry작성할곳 -->
+
+<!-- 	<insert id="mailInsert" parameterType="mailVO"> -->
+<!-- 		INSERT INTO GROUP_MAIL( -->
+<!-- 		MAIL_NUM, FROM_NAME, TO_NAME, FROM_MAIL, TO_MAIL, -->
+<!-- 		MAIL_SENDTIME, MAIL_TITLE, MAIL_CONTENT, MAIL_FILE, MAIL_FILEPATH -->
+<!-- 		) -->
+<!-- 		VALUES( -->
+<!-- 		MAIL_SEQ.NEXTVAL, '${fromName}', '${toName}', '${fromMail}', '${toMail}', -->
+<!-- 		SYSDATE, '${mailTitle}', '${mailContent}', '${mailFile}', '${mailFilepath}' -->
+<!-- 		) -->
+<!-- 	</insert> -->
+
+	<select id="messageList" resultType="MessageVO">
+		SELECT * FROM EM
+<!-- 		WHERE MEMBER_NUM = '${mailIdx}' -->
+		ORDER BY EM_IDX ASC
+	</select>
+
+	<resultMap type="MessageDetailVO" id="MessageDetailMap">
+		<result column="EM_IDX" property="emIdx" />
+		<result column="EM_OUT" property="emOut" />
+		<result column="EM_IN" property="emIn" />
+		<result column="EM_OUTTIME" property="emOuttime" />
+		<result column="EM_TITLE" property="emTitle" />
+		<result column="EM_CONT" property="emCont" />
+		<result column="MEM_IDX" property="memIdx" />
+		<result column="EMBOX_READ" property="emboxRead" />
+		<result column="EMBOX_DVSN" property="emboxDvsn" />
+		<result column="EMF_NUM" property="emfIdx" />
+		<result column="EMF_NAME" property="emNm" />
+		<result column="EMF_EXTN" property="emExtn" />
+		<result column="EMF_SIZE" property="emfSize" />
+		<result column="EMF_PATH" property="emFpath" />
+		<result column="EMF_DEL" property="emDel" />
+		<result column="MEM_NM" property="memNm" />
+	</resultMap>
+
+	<select id="mailDetail" resultMap="MessageDetailMap">
+<!--  		SELECT * FROM EM  -->
+<!--   		WHERE EM_IDX = '${emIdx}' -->
+			SELECT *
+			FROM EM_FBOX, EM
+			WHERE EM_FBOX.EM_IDX = EM.EM_IDX
+			AND EM.EM_IDX='${emIdx}' 
+	</select>
+	<select id="mailDetail2" resultMap="MessageDetailMap">
+<!--  		SELECT * FROM EM  -->
+<!--   		WHERE EM_IDX = '${emIdx}' -->
+			SELECT *
+			FROM EM
+			WHERE EM_IDX='${emIdx}'
+	</select>
+
+
+<!-- Querry작성할곳 -->
+<!-- 메시지쿼리 -->
+
+	<insert id="messageinsert" parameterType="MessageVO">
+		<selectKey keyProperty="emIdx" resultType="integer" order="AFTER">
+			SELECT MAIL_SEQ.CURRVAL FROM DUAL
+		</selectKey>
+	    INSERT INTO EM(
+			EM_IDX, EM_OUT, EM_IN, EM_OUTTIME,
+			EM_TITLE, EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN, MEM_NM, EM_DEL
+		) VALUES (
+			MAIL_SEQ.NEXTVAL, #{emOut}, #{emIn}, SYSDATE,
+			#{emTitle}, #{emCont}, #{memIdx}, 'N', 'N', #{memNm}, 'C'
+		)
+    </insert>
+    <insert id="messageFileInsert" parameterType="AttachFileVO">
+   		INSERT INTO EM_FBOX(EMF_NUM, EMF_NAME, EMF_EXTN, EMF_SIZE, EMF_PATH, EMF_DEL, EM_IDX)
+		VALUES (EMF_NUM_SEQ.NEXTVAL, '${emNm}', '${emExtn}', '${emfSize}', '${emFpath}', 'N', ${emIdx})
+    	
+    
+    </insert>
+    
+<!--     메세지 리스트 -->
+    <select id="messageListNum" resultType="MessageVO">
+    		<![CDATA[
+				  SELECT EM_IDX
+					FROM
+						(SELECT
+							rownum AS NO,
+							EM_IDX
+							FROM
+							EM
+							ORDER BY EM_IDX DESC
+							)
+					WHERE 
+						NO > '${firstRow}' 
+					AND 
+						NO <= '${endRow}'
+				]]>
+<!-- 					NO > 0 AND  -->
+<!-- 					NO <= 10; -->
+				
+	</select>
+		    
+<!--     내게쓴메일 -->
+    <select id="mailToMeList" resultType="MessageVO" parameterType="Criteria">
+SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+								EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN
+		    FROM (
+		        	SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+								EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN,
+		           		 row_number() 
+		           		 over(order by EM_IDX desc) as rNum
+		       		 FROM EM
+		       		 WHERE MEM_IDX = #{memIdx}
+						AND EM_IN = #{emIn}
+						AND EMBOX_DVSN = 'N'
+		        ) mb
+		   		 WHERE rNum between 1 and 10
+		        ORDER BY EM_IDX DESC
+    </select>
+    
+    <select id="sentMailList" resultType="MessageVO" parameterType="Criteria">
+		   SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+									EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN
+			    FROM (
+			        	SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+									EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN,
+		           		 row_number() 
+		           		 over(order by EM_IDX desc) as rNum
+		       		 FROM EM
+		       		 WHERE NOT EM_IN = #{emIn}
+						AND MEM_IDX = #{memIdx}
+						AND EM_OUT = #{emOut}
+		        ) mb
+		   		 WHERE rNum between #{rowStart} and #{rowEnd}
+		        ORDER BY EM_IDX DESC
+    </select>
+   
+
+<!-- 메시지쿼리 -->
+<!--게시판 페이징으로 조회 -->
+	<select id="list" resultType="MessageVO">
+	 SELECT
+ 			*
+ 		FROM EM
+	</select>
+	
+
+   <select id="listPage" resultType="MessageVO" parameterType="Criteria">
+			SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+								EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN
+		    FROM (
+		        	SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+								EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN,
+		           		 row_number() 
+		           		 over(order by EM_IDX desc) as rNum
+		       		 FROM EM
+		       		 WHERE EM_IN = #{emOut}
+		       		 AND EMBOX_DVSN = 'N'
+		        ) mb
+		   		 WHERE rNum between #{rowStart} and #{rowEnd}
+		        ORDER BY EM_IDX DESC
+	</select>
+	
+	<select id="view" parameterType="int" resultType="MessageVO">
+	  SELECT
+ 			*
+ 	 FROM 	EM
+ 	 WHERE EM_IDX = #{emIdx}
+ 	 </select>
+
+ <select id="listCount" resultType="int">
+ 	 <![CDATA[SELECT count(EM_IDX)
+ 	 		FROM EM
+ 	 		WHERE EM_IDX > 0
+ 	 ]]>
+ 	 </select>
+ 	 
+ 	 <!-- 검색 -->
+	<sql id="search">
+	 <if test="searchType != null">
+	  <if test="searchType == 't'.toString()">where title like '%' || #{keyword} || '%'</if>
+	  <if test="searchType == 'c'.toString()">where content like '%' || #{keyword} || '%'</if>
+	  <if test="searchType == 'w'.toString()">where writer like '%' || #{keyword} || '%'</if>
+	  <if test="searchType == 'tc'.toString()">where (title like '%' || #{keyword} || '%') or (content like '%' || #{keyword} || '%')</if>
+	 </if>
+	</sql>
+	
+	<select id="listSearch" resultType="MessageVO" parameterType="SearchCriteria">
+	
+	select *
+       from (
+           select *,
+               row_number() over(order by MAIL_IDX desc) as rNum
+           from EM
+      <include refid="search"></include>
+     ) mb
+    where rNum between #{rowStart} and #{rowEnd}
+        order by EM_IDX desc
+	</select>
+	
+	<select id="countSearch" resultType="int">
+	 SELECT count(EM_IDX)
+	  FROM EM
+	   <include refid="search"></include>
+	<![CDATA[
+	   AND EM_IDX > 0
+	]]>
+	</select>	
+	
+	<update id="garbage" parameterType="MessageVO">
+		UPDATE EM
+		SET EMBOX_DVSN = 'D' 
+		WHERE EM_IDX = #{emIdx}
+	</update>
+	
+	<update id="messageImport" parameterType="MessageVO">
+		UPDATE EM
+		SET EMBOX_DVSN = 'I' 
+		WHERE EM_IDX = #{emIdx}
+	</update>
+	
+	<update id="Restoration" parameterType="MessageVO">
+		UPDATE EM
+		SET EMBOX_DVSN = 'N' 
+		WHERE EM_IDX = #{emIdx}
+	</update>
+	
+	
+<!-- 	중요메세지함 -->
+  <select id="ImportList" resultType="MessageVO" parameterType="Criteria">
+			SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+								EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN
+		    FROM (
+		        	SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+								EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN,
+		           		 row_number() 
+		           		 over(order by EM_IDX desc) as rNum
+		       		 FROM EM
+		       		 WHERE EM_IN = #{emOut}
+		       		 AND EMBOX_DVSN = 'I'
+		        ) mb
+		   		 WHERE rNum between #{rowStart} and #{rowEnd}
+		        ORDER BY EM_IDX DESC
+	</select>
+
+<!-- 	휴지통 -->
+  <select id="DeleteList" resultType="MessageVO" parameterType="Criteria">
+			SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+								EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN, EM_DEL
+		    FROM (
+		        	SELECT EM_IDX, EM_OUT, EM_IN, EM_OUTTIME, EM_TITLE, 
+								EM_CONT, MEM_IDX, EMBOX_READ, EMBOX_DVSN, EM_DEL,
+		           		 row_number() 
+		           		 over(order by EM_IDX desc) as rNum
+		       		 FROM EM
+		       		 WHERE EM_IN = #{emOut}
+		       		 AND EMBOX_DVSN = 'D'
+		       		 AND EM_DEL = 'C'
+		        ) mb
+		   		 WHERE rNum between #{rowStart} and #{rowEnd}
+		        ORDER BY EM_IDX DESC
+	</select>
+	
+	<update id="deleteComplete" parameterType="MessageVO">
+		UPDATE EM SET EM_DEL
+			= 'D' WHERE EM_IDX = #{emIdx}
+	</update>
+	
+<!-- 	<delete id="deleteComplete" parameterType="MessageVO"> -->
+<!-- 		DELETE FROM EM -->
+<!-- 		WHERE MEM_IDX = #{memIdx} -->
+<!-- 		AND EM_IN = #{emIn} -->
+<!-- 		AND EMBOX_DVSN ='D' -->
+<!-- 		AND EM_IDX = #{emIdx} -->
+<!-- 	</delete> -->
+	
+<!-- 	이름에 맞는 이메일 검색 -->
+	<select id="selectNm" resultType="MessageVO">
+		SELECT MEM_NM, MEM_EM FROM MEM
+		WHERE MEM_DVSN = '2'
+	</select>
+	
+<!-- 	파일 한개 검색(상세페이지에서) -->
+	<select id="fileSearch" resultMap="MessageDetailMap">
+		SELECT * FROM EM_FBOX
+		WHERE em_idx = #{emIdx}
+		AND EMF_NUM = #{emfIdx}
+	</select>
+	
+
+</mapper>

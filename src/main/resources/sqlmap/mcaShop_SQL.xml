@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.mcaShop.mapper.McaShopMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+   <!--상품 목록  -->
+   <resultMap id="mcaShopMap" type="mcaShopVO" >
+         <id property="prodIdx" column="prod_idx" />
+         <id property="prodNm" column="prod_nm" />
+         <id property="prodPrice" column="prod_price" />
+         <id property="prodQty" column="prod_qty" />
+         <id property="prodCont" column="prod_cont" />
+         <id property="prodDate" column="prod_date" />
+            <collection  property="fProdVO" ofType="fProdVO">
+               <id property="fprodIdx" column="fprod_idx" />
+               <result property="fprodNm" column="fprod_nm" />
+            </collection>
+   </resultMap>
+         
+   <!--상품 목록  -->
+   <select id="list" resultMap="mcaShopMap">
+      <![CDATA[
+         SELECT a.prod_idx,a.prod_nm,a.prod_price,a.prod_qty,a.prod_cont,a.prod_date, b.fprod_idx, b.fprod_nm
+         FROM   PRODUCT a, F_PROD B
+         WHERE  A.PROD_IDX = B.PROD_IDX
+         ORDER BY a.prod_idx desc
+      ]]>
+   </select>
+   
+   <!-- 상품 상세 조회 -->
+   <resultMap id="mcaShopMap2" type="mcaShopVO" >
+         <id property="prodIdx" column="prod_idx" />
+         <id property="prodNm" column="prod_nm" />
+         <id property="prodPrice" column="prod_price" />
+         <id property="prodQty" column="prod_qty" />
+         <id property="prodCont" column="prod_cont" />
+         <id property="prodDate" column="prod_date" />
+            <collection  property="fProdVO" ofType="fProdVO">
+               <id property="fprodIdx" column="fprod_idx" />
+               <result property="fprodNm" column="fprod_nm" />
+               <result property="prodIdx" column="prod_idx" />
+            </collection>
+   </resultMap>
+         
+   <select id="productDetail" resultMap="mcaShopMap2" parameterType="string">
+      <![CDATA[
+         SELECT a.prod_idx,a.prod_nm,a.prod_price,a.prod_qty,a.prod_cont,a.prod_date, b.fprod_idx, b.fprod_nm, b.prod_idx
+         FROM   PRODUCT a, F_PROD b
+         WHERE  A.PROD_IDX = B.PROD_IDX
+         AND A.PROD_IDX = #{prodIdx}
+         ORDER BY a.prod_idx desc
+      ]]>
+   </select>
+
+   
+   <!-- 상품 수정전 상세조회 -->
+   <resultMap id="mcaShopMap3" type="mcaShopVO" >
+         <id property="prodIdx" column="prod_idx" />
+         <id property="prodNm" column="prod_nm" />
+         <id property="prodPrice" column="prod_price" />
+         <id property="prodQty" column="prod_qty" />
+         <id property="prodCont" column="prod_cont" />
+         <id property="prodDate" column="prod_date" />
+            <collection  property="fProdVO" ofType="fProdVO">
+               <id property="fprodIdx" column="fprod_idx" />
+               <result property="fprodNm" column="fprod_nm" />
+               <result property="prodIdx" column="prod_idx" />
+            </collection>
+   </resultMap>
+   
+   <!-- 상품 수정전 상세조회 -->
+   <select id="updateList" resultMap="mcaShopMap3" parameterType="string">
+      <![CDATA[
+         SELECT a.prod_idx,a.prod_nm,a.prod_price,a.prod_qty,a.prod_cont,a.prod_date, b.fprod_idx, b.fprod_nm, b.prod_idx
+         FROM   PRODUCT a, F_PROD b
+         WHERE  A.PROD_IDX = B.PROD_IDX
+         AND A.PROD_IDX = #{prodIdx}
+         ORDER BY a.prod_idx desc
+      ]]>
+   </select>
+   
+   <!-- 상품 등록 -->
+   <insert id="insert" parameterType="mcaShopVO">
+      <selectKey order="BEFORE" keyProperty="prodIdx" resultType="int">
+         SELECT SEQ_mcaShop.nextval FROM DUAL
+      </selectKey>
+      INSERT INTO PRODUCT(
+         PROD_IDX,
+         PROD_NM,
+         PROD_PRICE,
+         PROD_QTY,
+         PROD_CONT,
+         PROD_DATE
+      )VALUES(
+         #{prodIdx},
+         #{prodNm},
+         #{prodPrice},
+         #{prodQty},
+         #{prodCont},
+         SYSDATE 
+      )
+   </insert>
+   <!-- 상품 등록 이미지 -->
+   <update id="insertFProd" parameterType="java.util.List">
+      <foreach collection="list" item="item" open="INSERT ALL " close=" SELECT * FROM DUAL" separator="">
+         INTO F_PROD (FPROD_IDX, PROD_IDX, FPROD_NM) VALUES
+          (
+            #{item.fprodIdx},
+            #{item.prodIdx},
+            #{item.fprodNm}
+           )
+      </foreach>
+   </update>
+   
+   
+   <!-- 상품 수정  -->
+   <update id="update" parameterType="mcaShopVO">
+         UPDATE PRODUCT
+         SET
+         PROD_NM = #{prodNm},
+         PROD_PRICE = #{prodPrice},
+         PROD_QTY = #{prodQty},
+         PROD_CONT = #{prodCont},
+         PROD_DATE = SYSDATE 
+         WHERE
+         PROD_IDX = #{prodIdx}
+   </update>
+   <!-- 상품 이미지 수정  -->
+   <update id="updateImage" parameterType="java.util.List">
+      <foreach collection="list" item="item" open="" close="" separator="">
+         UPDATE F_PROD SET
+         FPROD_NM = #{item.fprodNm}
+         WHERE
+         PROD_IDX = #{item.prodIdx}
+      </foreach>
+   </update>
+   
+   <!-- 상품 삭제 -->
+   <delete id="delete" parameterType="string">
+         delete from product
+         where
+         prod_idx = #{item.prodIdx}
+   </delete>
+   
+   
+   <!--ㅇㅇㅇㅇ 충전 및 결제 시작점  ㅇㅇㅇㅇ-->
+
+   
+   <!--회원 포인트 업데이트 -->
+   <update id="pointUpdate" parameterType="hashMap">
+   <![CDATA[
+      UPDATE MEM 
+      SET 
+      MEM_POINT = MEM_POINT+#{memPoint}
+      WHERE   
+      MEM_IDX = #{memIdx}
+      ]]>
+   </update>
+   <!-- 회원 포인트 업데이트  끝 -->
+   
+   <!--회원 주문 포인트 다운 업데이트 -->
+   <update id="pointDownUpdate" parameterType="hashMap">
+   <![CDATA[
+      UPDATE MEM 
+      SET 
+      MEM_POINT = #{memPoint}
+      WHERE   
+      MEM_IDX = #{memIdx}
+      ]]>
+   </update>
+   <!-- 회원 포인트 업데이트  끝 -->
+   
+   <!--회원 주문후 상품수량 감소 -->
+   <update id="ProdQtyDown" parameterType="hashMap">
+   <![CDATA[
+      UPDATE PRODUCT
+      SET 
+      PROD_QTY = PROD_QTY-#{ordrProdqty}
+      WHERE   
+      PROD_IDX = #{prodIdx}
+      ]]>
+   </update>
+   <!--회원 주문후 상품수량 감소 -->
+
+   
+   <!-- 충전 이력 테이블 인설트 -->
+   <insert id="insertChargeGo" parameterType="hashMap">
+      <selectKey order="BEFORE" keyProperty="chargeIdx" resultType="string">
+         SELECT SEQ_POINTCHARGE.nextval FROM DUAL
+      </selectKey>
+      <![CDATA[
+         INSERT INTO CHARGE (CHARGE_IDX,MEM_IDX,POINT_CHARGE)
+         VALUES(
+            #{chargeIdx},
+            #{memIdx},
+            SYSDATE
+         )   
+      ]]>
+   </insert>
+   <!-- 충전 끝 -->
+   
+   
+   <!-- 주문 값 넣기 -->
+   <insert id="OrderInsert" parameterType="hashMap" >
+   		<selectKey order="BEFORE" keyProperty="ordrIdx" resultType="string">
+   			SELECT SEQ_ORDR.nextval FROM DUAL
+   		</selectKey>
+   		INSERT INTO ORDR (
+   			ORDR_IDX,
+   			PROD_IDX,
+   			MEM_IDX,
+   			ORDR_DATE,
+   			ORDR_PRODNM,
+   			ORDR_PRODPRICE,
+   			ORDR_PRODQTY
+   		)
+   		VALUES(
+   			#{ordrIdx},
+			#{prodIdx},
+			#{memIdx},
+			SYSDATE,
+			#{prodNm},
+		    #{ordrProdprice},
+ 			#{ordrProdqty}
+   		)
+   </insert>
+   
+   <!-- 주문 내역 -->
+   <select id="OrderList" parameterType="hashMap" resultType="OrdrVO">
+	   <![CDATA[
+	   		SELECT 
+	   			ORDR_IDX,
+				ORDR_PRODNM, 
+				ORDR_PRODQTY, 
+				ORDR_PRODPRICE,
+				TO_CHAR(ORDR_DATE,'YYYY-MM-DD') AS ORDR_DATE
+	   	    FROM 
+	   	    	ORDR
+	   		WHERE
+	   			MEM_IDX = #{memIdx}
+	   		ORDER BY ORDR_DATE
+	   	]]>		
+   </select>
+   
+   
+   <select id="selectCharge" parameterType="hashMap" resultType="ChargeVO">
+      SELECT MAX(CHARGE_IDX) FROM 
+      CHARGE
+      WHERE 
+      MEM_IDX = #{memIdx}
+   </select>
+   
+   
+   <!-- 포인트 충전내역 -->
+   <insert id="insertPointGo" parameterType="hashMap">
+      <![CDATA[
+      INSERT INTO POINT (POINT_IDX,POINT_USEREC,POINT_AMT,CHARGE_IDX,MEM_IDX)
+      VALUES(
+         SEQ_POINT.nextval,
+         #{pointUserec},
+         #{pointAmt},
+         #{chargeIdx},
+         #{memIdx}
+      )   
+      ]]>
+   </insert>
+   <!-- 포인트 내역 끝 -->
+   
+   <!-- 로그인한 멤버 조회 -->
+   <select id="LoginMember" resultType="hashMap" parameterType="MemberVO">
+      SELECT * FROM
+           MEM
+        WHERE 
+           MEM_IDX = #{memIdx}
+   </select>
+
+   <!-- 로그인한 멤버 조회 -->
+   <select id="LoginMemberPoint" resultType="hashMap" parameterType="hashMap">
+      SELECT MEM_POINT FROM
+        MEM
+      WHERE 
+        MEM_IDX = #{memIdx}
+   </select>
+   
+   
+    <!-- 상품 검색  -->
+   <resultMap id="mcaShopMap5" type="mcaShopVO" >
+         <id property="prodIdx" column="prod_idx" />
+         <id property="prodNm" column="prod_nm" />
+         <id property="prodPrice" column="prod_price" />
+         <id property="prodQty" column="prod_qty" />
+         <id property="prodCont" column="prod_cont" />
+         <id property="prodDate" column="prod_date" />
+            <collection  property="fProdVO" ofType="fProdVO">
+               <id property="fprodIdx" column="fprod_idx" />
+               <result property="fprodNm" column="fprod_nm" />
+            </collection>
+   </resultMap>
+         
+   <select id="Search" resultMap="mcaShopMap5" parameterType="hashMap" resultType="mcaShopVO">
+      <![CDATA[
+         SELECT a.prod_idx,a.prod_nm,a.prod_price,a.prod_qty,a.prod_cont,a.prod_date, b.fprod_idx, b.fprod_nm
+         FROM   PRODUCT a, F_PROD B
+         WHERE  A.PROD_IDX = B.PROD_IDX
+         AND	PROD_NM LIKE '%' || #{prodNm} || '%'
+         ORDER BY a.prod_idx desc
+      ]]>
+   </select>
+   
+   
+   <!-- 주문 내역 삭제 -->
+   <delete id="deleteOrlist">
+   	DELETE FROM 
+   		ORDR  
+   	WHERE
+   		ORDR_IDX = #{ordrIdx}
+   
+   </delete>
+   
+   
+   
+</mapper>

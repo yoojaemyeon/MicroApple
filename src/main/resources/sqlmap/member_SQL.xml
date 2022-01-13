@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.member.mapper.MemberMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+
+<!-- Querry작성할곳 -->
+	<!-- 직원 등록 및 정보 수정-->
+	<insert id="insert" parameterType="memberVO" >
+                        
+		MERGE INTO MEM A
+		USING DUAL
+		ON(A.MEM_IDX = #{memIdx}) 
+        WHEN MATCHED THEN
+            UPDATE SET A.MEM_ID=#{memId}, A.MEM_PW=#{memPw}, A.MEM_EM=#{memEm}, A.MEM_PH=#{memPh}, 
+                    A.MEM_ZIPCODE=#{memZipcode}, A.MEM_ADDR1=#{memAddr1}, A.MEM_ADDR2=#{memAddr2}, 
+                    A.MEM_DVSN=#{memDvsn}, A.MEM_END=#{memEnd},A.MEM_NM=#{memNm},
+                    A.MEM_PICTURE=#{memPicture}, A.MEM_POINT=#{memPoint}, A.MEM_DNREASON=#{memDnreason}
+        WHEN NOT MATCHED THEN 
+            INSERT (MEM_IDX, MEM_ID, MEM_PW, MEM_NM, MEM_EM, MEM_PH, 
+                    MEM_ZIPCODE, MEM_ADDR1, MEM_ADDR2, MEM_DVSN, MEM_START, MEM_END,
+                    MEM_PICTURE, MEM_POINT, MEM_DNREASON
+                    )   				
+            VALUES ((SELECT NVL(MAX(MEM_IDX) + 1, TO_CHAR(SYSDATE,'YYMMDD')||'0001')
+                    FROM   MEM
+                    WHERE  SUBSTR(MEM_IDX,1,2) = TO_CHAR(SYSDATE,'YY')), 
+                    #{memId}, #{memPw}, #{memNm}, #{memEm}, #{memPh}, 
+                    #{memZipcode}, #{memAddr1}, #{memAddr2}, '1', TO_CHAR(SYSDATE,'YYMMDD'), NULL,
+                    #{memPicture}, #{memPoint}, #{memDnreason}
+                    )
+<!-- 		INSERT INTO MEM(MEM_IDX, MEM_ID, MEM_PW, MEM_NM, MEM_EM, MEM_PH,  -->
+<!--            				MEM_ZIPCODE, MEM_ADDR1, MEM_ADDR2, MEM_DVSN, MEM_START, MEM_END) -->
+           				
+<!-- 		VALUES ((SELECT NVL(MAX(MEM_IDX) + 1, TO_CHAR(SYSDATE,'YYMMDD')||'0001') -->
+<!-- 				FROM   MEM -->
+<!-- 				WHERE  SUBSTR(MEM_IDX,1,2) = TO_CHAR(SYSDATE,'YY')),  -->
+<!-- 		        #{memId}, #{memPw}, #{memNm}, #{memEm}, #{memPh},  -->
+<!-- 		        #{memZipcode}, #{memAddr1}, #{memAddr2}, '1', SYSDATE, NULL) -->
+	</insert>
+	
+	
+	<select id="detail" parameterType="String" resultType="memberVO" >
+	    SELECT A.MEM_IDX, A.MEM_ID, A.MEM_PW, A.MEM_NM, A.MEM_EM, A.MEM_ZIPCODE, A.MEM_ADDR1, A.MEM_ADDR2
+	            , A.MEM_DVSN, TO_CHAR(A.MEM_START, 'YYYYMMDD') AS MEM_START, A.MEM_END, A.MEM_PICTURE, A.MEM_POINT
+				, A.MEM_SIGN, A.DEPT_IDX, A.ATHR_IDX, A.POSITION_IDX, A.MEM_PH, A.MEM_DNREASON, B.POSITION_NM, C.DEPT_NM
+		FROM   MEM A, POSITION B, DEPT C
+		WHERE  MEM_ID =  #{memId} 
+	    AND A.POSITION_IDX = B.POSITION_IDX
+	    AND A.DEPT_IDX = C.DEPT_IDX
+	</select>
+
+	
+	
+	<!-- 아이디 중복 체크 -->
+	<select id="idCheck" parameterType="String" resultType="int">
+        SELECT COUNT(MEM_ID) 
+        FROM   MEM 
+        WHERE  MEM_ID = #{memId}
+    </select>
+    
+    <!-- memberList -->
+    <select id="list" resultType="memberVO">
+	    SELECT MEM_IDX, MEM_ID, MEM_PW, MEM_NM, MEM_EM, MEM_ZIPCODE ,MEM_ADDR1, MEM_ADDR2, MEM_DVSN, TO_CHAR(MEM_START, 'YYYYMMDD') AS MEM_START, TO_CHAR(MEM_END, 'YYYYMMDD') AS MEM_END, MEM_PICTURE, MEM_POINT
+			, MEM_SIGN, DEPT_IDX, ATHR_IDX, POSITION_IDX, MEM_PH, MEM_DNREASON  
+		FROM MEM
+		ORDER BY MEM_IDX ASC
+    </select>
+    
+    
+    <select id="memChat" parameterType="String" resultType="memberVO">
+        SELECT MEM_IDX, MEM_ID, MEM_PW, MEM_NM, MEM_EM, MEM_PH, 
+	      	   MEM_ZIPCODE, MEM_ADDR1, MEM_ADDR2, MEM_DVSN, MEM_START, MEM_END
+		FROM   MEM
+		WHERE  MEM_IDX = #{memIdx}
+    </select>
+    
+    <!-- 거부사유 Update -->
+    <update id="memberApprovalDeny" parameterType="hashMap">
+		 UPDATE MEM
+		 SET    MEM_DNREASON = #{memDnreason}
+		 WHERE  MEM_IDX = #{memIdx}
+	</update>
+    
+    <!-- 승인  Update -->
+    <update id="memDivisions" parameterType="hashMap">
+		UPDATE MEM A 
+		   SET A.DEPT_IDX=(SELECT B.DEPT_IDX 
+		                     FROM DEPT B
+		                    WHERE B.DEPT_NM = #{deptNm}),
+		       A.POSITION_IDX=(SELECT C.POSITION_IDX
+		                     FROM POSITION C
+		                    WHERE C.POSITION_NM = #{positionNm}),
+		       A.MEM_DVSN = #{memDvsn}
+		 WHERE A.MEM_IDX = #{memIdx}
+	</update>
+    
+    <!-- 거부  Update -->
+    <update id="memDenial" parameterType="hashMap">
+		UPDATE MEM
+		   SET MEM_DVSN = #{memDvsn}
+		 WHERE MEM_IDX = #{memIdx}
+	</update>
+	
+	<!-- 부서 목록 불러오기 -->
+	<select id="deptList" resultType="DeptVO">
+	  <![CDATA[
+	    SELECT *
+		FROM DEPT
+		ORDER BY DEPT_IDX
+	  ]]>
+	</select>
+	
+	<!-- 직급 목록 불러오기 -->
+	<select id="positionList" resultType="PositionVO">
+	  <![CDATA[
+	    SELECT *
+		FROM POSITION
+		ORDER BY POSITION_IDX DESC
+	  ]]>
+	</select>
+	
+	
+	
+	<!-- 퇴직된 총 사원 목록 갯수 출력 -->
+	<select id="retirementGetTotal" resultType="int">
+		SELECT COUNT(*) CNT FROM MEM  WHERE MEM_DVSN = '4'
+	</select>
+	
+<!-- 	퇴사  Update -->
+    <update id="retirementPost" parameterType="hashMap">
+		UPDATE MEM
+		   SET MEM_DVSN = #{memDvsn}, MEM_END = SYSDATE
+		 WHERE MEM_IDX = #{memIdx}
+		 
+	</update>
+	
+	<!-- 승인된 총 사원 목록 갯수 출력 -->
+	<select id="getTotal" resultType="int">
+		SELECT COUNT(*) CNT FROM MEM  WHERE MEM_DVSN = '2'
+	</select>
+	
+	<!-- 페이징 처리 후 사원 조회 -->
+	<select id="getListWithPaging" resultType="memberVO" parameterType="memberCriteria">
+		<![CDATA[
+			SELECT T.*
+			FROM (SELECT ROWNUM RN
+			             , A.MEM_IDX, A.MEM_ID, A.MEM_NM, A.MEM_PH, A.MEM_DVSN
+			             , A.MEM_EM, TO_CHAR(A.MEM_START, 'YYYY.MM.DD') AS MEM_START, TO_CHAR(A.MEM_END, 'YYYY.MM.DD') AS MEM_END, A.MEM_ZIPCODE, A.MEM_ADDR1, A.MEM_ADDR2
+			             , B.DEPT_NM, C.POSITION_NM
+			       FROM   MEM A, DEPT B, POSITION C
+			       WHERE  A.DEPT_IDX = B.DEPT_IDX
+			       AND    A.POSITION_IDX = C.POSITION_IDX
+			       AND    ROWNUM <= #{pageNum, jdbcType=VARCHAR} * #{amount, jdbcType=VARCHAR}
+			       AND    A.MEM_DVSN = #{memDvsn}) T
+			 WHERE T.RN > (#{pageNum, jdbcType=VARCHAR}-1) * #{amount, jdbcType=VARCHAR}
+		 ]]>
+	</select>
+	
+	
+	
+	<!-- 직원상세페이지 -->
+	<select id="memberMyPage" parameterType="String" resultType="memberVO" >
+		SELECT MEM_IDX, MEM_ID, MEM_PW, MEM_NM, MEM_EM, MEM_ZIPCODE ,MEM_ADDR1, MEM_ADDR2, MEM_DVSN, MEM_START, MEM_END, MEM_PICTURE, MEM_POINT
+				, MEM_SIGN, DEPT_IDX, ATHR_IDX, POSITION_IDX, MEM_PH, MEM_DNREASON  
+		FROM   MEM
+		WHERE  MEM_ID = #{memId, jdbcType=VARCHAR}
+<!-- 		WHERE  MEM_IDX = #{memIdx} -->
+	</select>
+	
+	
+	<!-- 프로필 사진 update -->
+	 <update id="profileImg" parameterType="String">
+		 INSERT MEM
+		 VALUES MEM_PICTURE = #{memPicture}
+		 WHERE  MEM_IDX = #{memIdx}
+	</update>
+    
+    <update id="deleteProfilePhoto" parameterType="String">
+    	UPDATE MEM
+		SET   MEM_PICTURE = '' 
+		WHERE  MEM_IDX = #{memIdx}
+    </update>
+    
+    <update id="profileImgUpdate" parameterType="String">
+    	UPDATE MEM
+		SET   MEM_PICTURE = #{memPicture}
+		WHERE  MEM_IDX = #{memIdx}
+    </update>
+    
+    
+    
+<!-- Querry작성할곳 -->
+	
+
+
+</mapper>

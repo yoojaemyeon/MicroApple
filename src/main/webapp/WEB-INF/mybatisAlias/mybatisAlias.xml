@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<!-- 
+	[마이바티스] 스프링에서 "_"를 사용한 컬럼명 사용할 때 mapUnderscoreToCamelCase를 통해 테이블 컬럼명에 "_"가 있을 경우 카멜케이스로 읽어줌
+	ex) 테이블 컬럼명이 member_id인 경우 jsp화면단에서 이 값을 사용할 때 새 memberId로 사용
+	-->
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+	</settings>
+	
+	<typeAliases>
+		<typeAlias alias="boardVO" type="micro.apple.groupware.board.vo.BoardVO"/>
+		
+		<typeAlias alias="calendarVO" type="micro.apple.groupware.calendar.vo.CalendarVO"/>
+		<typeAlias alias="chattingVO" type="micro.apple.groupware.chatting.vo.ChattingVO"/>
+		<typeAlias alias="conferenceVO" type="micro.apple.groupware.conference.vo.ConferenceVO"/>
+		<typeAlias alias="eDocumentVO" type="micro.apple.groupware.eDocument.vo.EDocumentVO"/>
+		<typeAlias alias="mailVO" type="micro.apple.groupware.mail.vo.MailVO"/>
+		<typeAlias alias="mainVO" type="micro.apple.groupware.main.vo.MainVO"/>
+		<typeAlias alias="mcaShopVO" type="micro.apple.groupware.mcaShop.vo.McaShopVO"/>
+		<typeAlias alias="memberVO" type="micro.apple.groupware.member.vo.MemberVO"/>
+		<typeAlias alias="reservationVO" type="micro.apple.groupware.reservation.vo.ReservationVO"/>
+		<typeAlias alias="testVO" type="micro.apple.groupware.test.vo.TestVO"/>
+		<typeAlias alias="videoMeetingVO" type="micro.apple.groupware.videoMeeting.vo.VideoMeetingVO"/>
+	
+		<!--12.23 강주희 원래 있던 VO 두개는 삭제-->
+		<typeAlias type="micro.apple.groupware.webDisk.vo.WebDiskVO" alias="webDiskVO"/>
+		<!--12.23 강주희-->
+
+		<!-- 구현수 -->
+		<typeAlias type="micro.apple.groupware.mail.vo.MessageVO" alias="MessageVO"/>
+		<typeAlias type="micro.apple.groupware.mail.vo.Criteria" alias="Criteria"/>
+		<typeAlias type="micro.apple.groupware.mail.vo.PageMaker" alias="PageMaker"/>
+		<typeAlias type="micro.apple.groupware.mail.vo.SearchCriteria" alias="SearchCriteria"/>		
+		<typeAlias type="micro.apple.groupware.mail.vo.AttachFileVO" alias="AttachFileVO"/>		
+		<typeAlias type="micro.apple.groupware.mail.vo.MessageDetailVO" alias="MessageDetailVO"/>	
+		<typeAlias type="micro.apple.groupware.calendar.vo.CalendarListVO" alias="CalendarListVO"/> 
+		<!-- 구현수 -->
+		
+		<!-- 유제이 -->
+		<typeAlias type="micro.apple.groupware.mcaShop.vo.FProdVO" alias="fProdVO"/>
+		<typeAlias type="micro.apple.groupware.mcaShop.vo.ChargeVO" alias="chargeVO"/>
+		<typeAlias type="micro.apple.groupware.mcaShop.vo.PointVO" alias="pointVO"/>
+		<typeAlias type="micro.apple.groupware.mcaShop.vo.OrdrVO" alias="OrdrVO"/>
+		<typeAlias type="micro.apple.groupware.conference.vo.AttendVO" alias="AttendVO"/>
+		<!-- 유제이 -->
+
+		<!--한주연-->
+		<typeAlias alias="commVO" type="micro.apple.groupware.board.vo.CommVO" />
+		<typeAlias alias="notifyVO" type="micro.apple.groupware.notify.vo.NotifyVO"/>
+		<!--한주연-->
+
+		<!-- 유재면 -->
+		<typeAlias alias="chatMessageVO" type="micro.apple.groupware.chatting.vo.ChatMessageVO" />
+		<typeAlias alias="articleVO" type="micro.apple.groupware.reservation.vo.ArticleVO" />
+		<!-- 유재면 -->
+
+
+		<!-- 서혜란 -->
+		<typeAlias alias="deptVO" type="micro.apple.groupware.member.vo.DeptVO" />
+		<typeAlias alias="positionVO" type="micro.apple.groupware.member.vo.PositionVO" />
+		<typeAlias alias="memberCriteria" type="micro.apple.groupware.member.vo.memberCriteria" />
+		<typeAlias alias="pageVO" type="micro.apple.groupware.member.vo.PageVO" />
+		<!-- 서혜란 -->
+	</typeAliases>
+	
+</configuration>

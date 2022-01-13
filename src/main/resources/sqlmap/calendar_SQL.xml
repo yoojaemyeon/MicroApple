@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="micro.apple.groupware.calendar.mapper.CalendarMapper">
+   <resultMap type="hashMap" id="resultMap1">
+      <result column="P_DESCRIPTION" property="P_DESCRIPTION" 
+         jdbcType="CLOB" javaType="java.lang.String" /> 
+   </resultMap>
+
+
+<!-- Querry작성할곳 -->
+	<insert id="scheduleJSON" parameterType="CalendarVO">
+		<selectKey keyProperty="schdIdx" resultType="integer" order="BEFORE">
+			SELECT SCHD_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+<!-- 		MERGE INTO SCHD a -->
+<!-- 		USING dual -->
+<!-- 		ON (a.SCHD_IDX = #{schdIdx}) -->
+<!-- 			 WHEN MATCHED THEN -->
+<!-- 			      UPDATE -->
+<!-- 			         SET a.SCHD_TITLE = #{schdTitle}, a.SCHD_START = #{schdStart}, a.SCHD_END = #{schdEnd} -->
+<!-- 			         	,a.SCHD_AD = #{schdAd} -->
+<!-- 			      WHERE a.MEM_IDX = #{memIdx} -->
+<!-- 			 WHEN NOT MATCHED THEN -->
+<!-- 			      INSERT (SCHD_IDX,SCHD_TITLE,SCHD_START,SCHD_END,SCHD_AD,MEM_IDX) -->
+<!-- 			      VALUES (SCHD_SEQ.nextval, #{schdTitle}, #{schdStart}, #{schdEnd}, #{schdAd}, #{memIdx}) -->
+		INSERT INTO SCHD(SCHD_IDX, SCHD_TITLE, SCHD_START, SCHD_END, SCHD_AD, MEM_IDX)
+		values(#{schdIdx}, #{schdTitle}, #{schdStart}, #{schdEnd}, #{schdAd}, #{memIdx})
+	</insert>
+
+	<select id="scheduleList" resultType="CalendarVO">
+		SELECT SCHD_IDX, SCHD_TITLE, SCHD_START, SCHD_END, SCHD_AD
+		FROM SCHD
+		WHERE MEM_IDX  = #{memIdx}
+	</select>
+	
+	<select id="searchSdIdx" resultType="CalendarVO">
+		SELECT SCHD_IDX FROM SCHD
+	</select>
+	
+	<delete id="duplicationDelete">
+		DELETE FROM SCHD
+		<![CDATA[
+			WHERE SCHD_IDX < #{schdIdx}
+			]]>
+			AND SCHD_TITLE = #{schdTitle}
+			AND SCHD_START = #{schdStart}
+			AND SCHD_END = #{schdEnd}
+			AND MEM_IDX = #{memIdx}
+	</delete>
+	
+	<delete id="duplicationDelete2">
+		DELETE FROM SCHD
+		<![CDATA[
+			WHERE SCHD_IDX < #{schdIdx}
+			]]>
+			AND SCHD_TITLE = #{schdTitle}
+			AND MEM_IDX = #{memIdx}
+	</delete>
+	
+	<select id="scheduleDetailList" resultType="CalendarVO">
+		SELECT * FROM SCHD
+		WHERE MEM_IDX = #{memIdx}
+		AND SCHD_IDX=#{schdIdx}
+	</select>
+<!-- 	<select id="scheduleDetailList2" resultType="CalendarVO"> -->
+<!-- 		SELECT * FROM SCHD -->
+<!-- 		WHERE MEM_IDX = #{memIdx} -->
+<!-- 		AND SCHD_IDX=#{schdIdx} -->
+<!-- 	</select> -->
+	<select id="scheduleDetailShareList" resultType="CalendarVO">
+		SELECT * FROM  SCHD s , SCHD_SHR ss 
+		WHERE s.SCHD_IDX = ss.SCHD_IDX
+		AND ss.MEM_IDX = #{memIdx}
+		AND ss.SCHD_IDX = #{schdIdx}
+	</select>
+	
+	<select id="scheduleShareNm" resultType="CalendarVO">
+		SELECT MEM_NM, MEM_IDX, MEM_EM FROM MEM
+		WHERE MEM_DVSN = 2 
+	</select>
+	
+	<update id="updateDetail" parameterType="CalendarVO">
+		UPDATE SCHD
+		SET
+		SCHD_CONT = #{schdCont},
+		SCHD_START = #{schdStart},
+		SCHD_END = #{schdEnd}
+		WHERE SCHD_IDX = #{schdIdx}
+	</update>	
+	
+	<delete id="schdDelete">
+		DELETE FROM SCHD
+		WHERE SCHD_IDX = #{schdIdx}
+	</delete>
+	
+	<insert id="schdShare" parameterType="CalendarVO">
+		INSERT INTO SCHD_SHR (SCHD_IDX, MEM_IDX, SCHD_SHR_DVSN)
+		VALUES (#{schdIdx}, #{memIdx}, #{schdShareDvsn})
+	</insert>
+
+	<select id="shareSchd" resultType="CalendarVO">
+		SELECT SCHD.SCHD_IDX , SCHD.SCHD_TITLE, SCHD.SCHD_CONT, 
+				SCHD.SCHD_START, SCHD.SCHD_END, SCHD_SHR.SCHD_SHR_DVSN
+		FROM SCHD, SCHD_SHR
+		WHERE SCHD.SCHD_IDX = SCHD_SHR.SCHD_IDX
+		AND SCHD_SHR.SCHD_SHR_DVSN = #{schdShareDvsn}
+		AND SCHD_SHR.MEM_IDX = #{memIdx}
+	</select>
+	
+	<delete id="deleteShare">
+		DELETE FROM SCHD_SHR
+		WHERE SCHD_IDX = #{schdIdx}
+	</delete>
+	
+	<select id="schdIdxDetact" resultType="CalendarListVO">
+		SELECT MEM_IDX FROM SCHD
+		WHERE SCHD_IDX = #{schdIdx}
+	</select>
+
+<!-- Querry작성할곳 -->
+
+
+
+</mapper>
